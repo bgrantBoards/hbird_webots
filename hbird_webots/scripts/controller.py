@@ -94,4 +94,6 @@ class Controller3D():
 
         U = np.array([u1, u2, u3, u4])
 
+        print(state.position)
+
         return U

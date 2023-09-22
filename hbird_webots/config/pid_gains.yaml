@@ -1,7 +1,7 @@
 # translational 
 kp_x: 0.
 kp_y: 0.
-kp_z: 0.
+kp_z: 10.0
 #-----
 ki_x: 0
 ki_y: 0
