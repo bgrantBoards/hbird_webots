@@ -95,9 +95,11 @@ class Controller3D():
 
         U = np.array([u1, u2, u3, u4])
 
+        print(f"errors: x {round(error_x, 3)} y: {round(error_y, 3)} z: {round(error_z, 3)}")
+        '''
         print(f"errors: x {round(error_x, 3)} y: {round(error_y, 3)} z: {round(error_z, 3)}\n\
                 thrust: x {round(u2, 3)} y: {round(u3, 3)} z {round(u1, 3)} yaw {round(u4, 3)}")
-
+        '''
 
 
         return U
