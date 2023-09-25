@@ -46,7 +46,7 @@ class Controller3D():
         self.kd_q = pid_gains['kd_q']
         self.kd_r = pid_gains['kd_r']
 
-    def compute_commands(self, setpoint, state):
+    def compute_commands(self, setpoint:Waypoint, state:State):
         """
         Inputs:
         - setpoint (Waypoint):      the desired control setpoint
@@ -55,45 +55,49 @@ class Controller3D():
         - U (np.array):     array of control inputs {u1-u4}
         """
 
-        x_dd_d = 0.0
-        y_dd_d = 0.0
-        z_dd_d = 0.0
-
-        error_x_d = 0.0 - state.velocity.x
+        # compute current cartesian positional error
         error_x = setpoint.position.x - state.position.x
-        error_y_d = 0.0 - state.velocity.y
         error_y = setpoint.position.y - state.position.y
-        error_z_d = 0.0 - state.velocity.z
         error_z = setpoint.position.z - state.position.z
         
-        x_dd_c = x_dd_d + (self.kd_x * error_x_d) + (self.kp_x * error_x)
-        y_dd_c = y_dd_d + (self.kd_y * error_y_d) + (self.kp_y * error_y)
-        z_dd_c = z_dd_d + (self.kd_z * error_z_d) + (self.kp_z * error_z)
-        
+        # use PID control to compute linear accelerations
+        x_dd = self.kd_x + (self.kp_x * error_x)
+        y_dd = self.kd_y + (self.kp_y * error_y)
+        z_dd = self.kd_z + (self.kp_z * error_z)
+
+        # compute angular position setpoints (derived from linear accelerations)
         psi_T = setpoint.heading
+        phi_set = (1/ self.params.g) * ((x_dd * sin(psi_T)) - (y_dd * cos(psi_T)))
+        theta_set = (1/ self.params.g) * ((x_dd * cos(psi_T)) + (y_dd * sin(psi_T)))
+        psi_set = setpoint.heading
+        
+        # compute current angular error
+        # error_p = 0.0 - state.angular_velocity.x
+        error_phi = phi_set - state.orientation.x
+        # error_q = 0.0 - state.angular_velocity.y
+        error_theta = theta_set - state.orientation.y
+        # error_r = 0.0 - state.angular_velocity.z
+        error_psi = psi_set - state.orientation.z
 
-        phi_d = (1/ self.params.g) * ((x_dd_c * sin(psi_T)) - (y_dd_c * cos(psi_T)))
-        theta_d = (1/ self.params.g) * ((x_dd_c * cos(psi_T)) + (y_dd_c * sin(psi_T)))
-        psi_d = setpoint.heading
 
-        p_d_d = 0.0
-        q_d_d = 0.0
-        r_d_d = 0.0
+        u1 = self.params.mass * (z_dd + self.params.g)                       # Z-axis   thrust
+        # u2 = p_d_d + (self.kd_p * error_p) + (self.kp_phi * error_phi)       # X-axis?  thrust
+        # u3 = q_d_d + (self.kd_q * error_q) + (self.kp_theta * error_theta)   # Y-axis?  thrust
+        # u4 = r_d_d + (self.kd_r * error_r) + (self.kp_psi * error_psi)       # yaw?
+        # u2 = self.params.I * ((self.kd_p * error_phi) + (self.kp_phi * error_phi)     )   # X-axis?  thrust
+        # u3 = self.params.I * ((self.kd_q * error_theta) + (self.kp_theta * error_theta) )   # Y-axis?  thrust
+        # u4 = self.params.I * ((self.kd_r * error_psi) + (self.kp_psi * error_psi)     )   # yaw?
+        u2 = ((self.kd_p * error_phi) + (self.kp_phi * error_phi)     )     # X-axis?  thrust
+        u3 = ((self.kd_q * error_theta) + (self.kp_theta * error_theta) )   # Y-axis?  thrust
+        u4 = ((self.kd_r * error_psi) + (self.kp_psi * error_psi)     )     # yaw?
 
-        error_p = 0.0 - state.angular_velocity.x
-        error_phi = phi_d - state.orientation.x
-        error_q = 0.0 - state.angular_velocity.y
-        error_theta = theta_d - state.orientation.y
-        error_r = 0.0 - state.angular_velocity.z
-        error_psi = psi_d - state.orientation.z
-
-        u1 = self.params.mass * (z_dd_c + self.params.g)
-        u2 = p_d_d + (self.kd_p * error_p) + (self.kp_phi * error_phi)
-        u3 = q_d_d + (self.kd_q * error_q) + (self.kp_theta * error_theta)
-        u4 = r_d_d + (self.kd_r * error_r) + (self.kp_psi * error_psi)
+        # u4 = 1
 
         U = np.array([u1, u2, u3, u4])
 
-        print(state.position)
+        print(f"errors: x {round(error_x, 3)} y: {round(error_y, 3)} z: {round(error_z, 3)}\n\
+                thrust: x {round(u2, 3)} y: {round(u3, 3)} z {round(u1, 3)} yaw {round(u4, 3)}")
+
+
 
         return U
