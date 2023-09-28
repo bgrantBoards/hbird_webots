@@ -1,6 +1,6 @@
 # Mini Project 1
 
-![](https://github.com/bgrantboards/hbird_webots/GIF.gif)
+![](https://github.com/bgrantboards/hbird_webots/blob/main/GIF.gif)
 
 ## What did you learn from this? What did you not know before this assignment?
 
